@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, DailyGoal, HydrationLog, dailyGoals, hydrationLogs } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,133 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+/**
+ * Get or create daily goal for a user.
+ * Returns the goal in ml for the current day.
+ */
+export async function getOrCreateDailyGoal(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get daily goal: database not available");
+    return 2000; // Default fallback
+  }
+
+  try {
+    const existing = await db
+      .select()
+      .from(dailyGoals)
+      .where(eq(dailyGoals.userId, userId))
+      .limit(1);
+
+    if (existing.length > 0) {
+      return existing[0].goalMl;
+    }
+
+    // Create default goal
+    await db.insert(dailyGoals).values({
+      userId,
+      goalMl: 2000,
+    });
+
+    return 2000;
+  } catch (error) {
+    console.error("[Database] Failed to get/create daily goal:", error);
+    return 2000;
+  }
+}
+
+/**
+ * Update daily goal for a user.
+ */
+export async function updateDailyGoal(userId: number, goalMl: number): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update daily goal: database not available");
+    return;
+  }
+
+  try {
+    const existing = await db
+      .select()
+      .from(dailyGoals)
+      .where(eq(dailyGoals.userId, userId))
+      .limit(1);
+
+    if (existing.length > 0) {
+      await db
+        .update(dailyGoals)
+        .set({ goalMl })
+        .where(eq(dailyGoals.userId, userId));
+    } else {
+      await db.insert(dailyGoals).values({
+        userId,
+        goalMl,
+      });
+    }
+  } catch (error) {
+    console.error("[Database] Failed to update daily goal:", error);
+    throw error;
+  }
+}
+
+/**
+ * Add hydration log entry.
+ */
+export async function addHydrationLog(
+  userId: number,
+  drinkType: string,
+  amountMl: number,
+  logDate: string
+): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot add hydration log: database not available");
+    return;
+  }
+
+  try {
+    await db.insert(hydrationLogs).values({
+      userId,
+      drinkType,
+      amountMl,
+      logDate,
+    });
+  } catch (error) {
+    console.error("[Database] Failed to add hydration log:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get all hydration logs for a specific date.
+ */
+export async function getHydrationLogsByDate(
+  userId: number,
+  logDate: string
+): Promise<HydrationLog[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get hydration logs: database not available");
+    return [];
+  }
+
+  try {
+    const logs = await db
+      .select()
+      .from(hydrationLogs)
+      .where(
+        and(
+          eq(hydrationLogs.userId, userId),
+          eq(hydrationLogs.logDate, logDate)
+        )
+      )
+      .orderBy(desc(hydrationLogs.createdAt));
+
+    return logs;
+  } catch (error) {
+    console.error("[Database] Failed to get hydration logs:", error);
+    return [];
+  }
+}
+
+
