@@ -32,6 +32,8 @@ export default function Home() {
   const [quantity, setQuantity] = useState(250);
   const [editingGoal, setEditingGoal] = useState(false);
   const [newGoal, setNewGoal] = useState(2000);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [previousTotalMl, setPreviousTotalMl] = useState<number | null>(null);
 
   // Fetch today's hydration data
   const { data: hydrationData, isLoading: dataLoading, refetch } = trpc.hydration.getTodayData.useQuery(
@@ -68,6 +70,27 @@ export default function Home() {
       setNewGoal(hydrationData.goal);
     }
   }, [hydrationData?.goal]);
+
+  // Detectar quando meta é atingida (apenas na transição)
+  useEffect(() => {
+    if (hydrationData) {
+      const totalMl = hydrationData.totalMl || 0;
+      const goal = hydrationData.goal || 2000;
+      const metaAgora = totalMl >= goal;
+      const metaAntes = previousTotalMl !== null && previousTotalMl < goal;
+
+      // Celebrar apenas quando transiciona de não atingida para atingida
+      if (metaAgora && metaAntes) {
+        setShowCelebration(true);
+        // Esconder celebração após 5 segundos
+        const timer = setTimeout(() => setShowCelebration(false), 5000);
+        return () => clearTimeout(timer);
+      }
+
+      // Atualizar o valor anterior
+      setPreviousTotalMl(totalMl);
+    }
+  }, [hydrationData?.totalMl, hydrationData?.goal, previousTotalMl]);
 
   const handleRegisterIntake = () => {
     if (!selectedDrink || quantity <= 0 || quantity % 50 !== 0) {
@@ -139,6 +162,130 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: "100vh", background: styles.bg, padding: 32 }}>
+      {/* Animação de Celebração */}
+      {showCelebration && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            pointerEvents: "none",
+          }}
+        >
+          {/* Confete de corações e flores */}
+          {Array.from({ length: 30 }).map((_, i) => {
+            const emojis = ["💕", "✨", "🌸", "🦋", "💐", "🌷", "🎀", "💖"];
+            const emoji = emojis[i % emojis.length];
+            const delay = Math.random() * 0.5;
+            const duration = 3 + Math.random() * 2;
+            const xStart = Math.random() * 100;
+            const xEnd = xStart + (Math.random() - 0.5) * 200;
+            const rotation = Math.random() * 360;
+
+            return (
+              <div
+                key={i}
+                style={{
+                  position: "fixed",
+                  fontSize: "2rem",
+                  animation: `celebrationFall ${duration}s ease-in forwards`,
+                  left: `${xStart}%`,
+                  top: "-50px",
+                  opacity: 0,
+                  transform: `rotate(${rotation}deg)`,
+                  animationDelay: `${delay}s`,
+                }}
+              >
+                {emoji}
+              </div>
+            );
+          })}
+
+          {/* Mensagem de celebração central */}
+          <div
+            style={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              textAlign: "center",
+              animation: "celebrationPulse 0.6s ease-out",
+              pointerEvents: "auto",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "4rem",
+                marginBottom: 16,
+                animation: "celebrationBounce 0.8s ease-out",
+              }}
+            >
+              ✨
+            </div>
+            <div
+              style={{
+                fontSize: "2rem",
+                fontStyle: "italic",
+                fontWeight: 700,
+                color: styles.primary,
+                marginBottom: 8,
+                textShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              }}
+            >
+              Parabéns!
+            </div>
+            <div
+              style={{
+                fontSize: "1rem",
+                color: styles.foreground,
+                textShadow: "0 1px 4px rgba(0,0,0,0.1)",
+              }}
+            >
+              Você atingiu sua meta diária! 🎉
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes celebrationFall {
+          to {
+            transform: translateY(100vh) rotate(720deg);
+            opacity: 0;
+          }
+        }
+        @keyframes celebrationPulse {
+          0% {
+            transform: translate(-50%, -50%) scale(0.5);
+            opacity: 0;
+          }
+          50% {
+            opacity: 1;
+          }
+          100% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+          }
+        }
+        @keyframes celebrationBounce {
+          0% {
+            transform: scale(0);
+          }
+          50% {
+            transform: scale(1.2);
+          }
+          100% {
+            transform: scale(1);
+          }
+        }
+      `}</style>
+
       <div style={{ maxWidth: 448, margin: "0 auto" }}>
         {/* Header */}
         <div style={{ marginBottom: 32, textAlign: "center" }}>
