@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Meu Diário de Hidratação</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Hidratação">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#fff0f3">
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💧</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💧</text></svg>">
+
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #fff0f3 0%, #f7fafc 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --cute-pink: #ff85a1;
+            --cute-pink-hover: #ff6b8b;
+            --cute-pink-light: #ffe3e8;
+            --text-dark: #2d3748;
+            --text-light: #718096;
+            --border-color: #ffd1dc;
+            --shadow-color: rgba(255, 133, 161, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent; /* Remove o flash azul ao clicar no celular */
+            user-select: none; /* Deixa com mais cara de app, evitando selecionar textos sem querer */
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 16px 20px 16px;
+            /* Suporte para telas com notch/câmera na tela */
+            padding-top: calc(env(safe-area-inset-top) + 20px);
+        }
+
+        /* Container Principal ajustado para ocupar a tela inteira do celular de forma fofa */
+        .app-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            width: 100%;
+            max-width: 400px;
+            border-radius: 30px;
+            padding: 24px;
+            box-shadow: 0 15px 35px var(--shadow-color);
+            border: 2px solid #ffffff;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        header {
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            letter-spacing: -0.3px;
+        }
+
+        /* Configuração da Meta */
+        .goal-setting {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            background: #ffffff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.01);
+            border: 1px solid rgba(255, 133, 161, 0.15);
+        }
+
+        .goal-setting label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .goal-input {
+            width: 70px;
+            padding: 4px 6px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            text-align: center;
+            outline: none;
+            background: #fffafb;
+        }
+
+        /* Círculo de Progresso */
+        .progress-panel {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .progress-svg-container {
+            position: relative;
+            width: 140px;
+            height: 140px;
+        }
+
+        .progress-svg-container svg {
+            transform: rotate(-90deg);
+        }
+
+        .circle-bg {
+            fill: none;
+            stroke: #edf2f7;
+            stroke-width: 8;
+        }
+
+        .circle-progress {
+            fill: none;
+            stroke: var(--cute-pink);
+            stroke-width: 8;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.6s ease;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .total-number {
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            line-height: 1;
+        }
+
+        .total-unit {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-top: 2px;
+        }
+
+        .percentage-badge {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--cute-pink);
+            margin-top: 3px;
+        }
+
+        /* Títulos */
+        .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-light);
+            margin-bottom: 4px;
+            font-weight: 700;
+            padding-left: 2px;
+        }
+
+        /* Grid de botões */
+        .type-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .type-btn {
+            background: #ffffff;
+            border: 1px solid #edf2f7;
+            border-radius: 18px;
+            padding: 12px 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-dark);
+        }
+
+        .type-btn .icon {
+            font-size: 1.25rem;
+        }
+
+        .type-btn.active {
+            border-color: var(--cute-pink);
+            background: var(--cute-pink-light);
+            color: var(--cute-pink-hover);
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(255, 133, 161, 0.15);
+        }
+
+        /* Quantidade */
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #ffffff;
+            border: 1px solid #edf2f7;
+            border-radius: 18px;
+            padding: 8px 14px;
+        }
+
+        .qty-btn {
+            background: var(--cute-pink-light);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: var(--cute-pink-hover);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .qty-display {
+            font-size: 1.15rem;
+            font-weight: 700;
+            width: 90px;
+            text-align: center;
+        }
+
+        /* Botão Registrar */
+        .register-btn {
+            width: 100%;
+            background: var(--cute-pink);
+            color: #ffffff;
+            border: none;
+            border-radius: 18px;
+            padding: 14px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(255, 133, 161, 0.25);
+        }
+
+        .register-btn:active {
+            background: var(--cute-pink-hover);
+            transform: scale(0.98);
+        }
+
+        /* Seção Histórico Integrada */
+        .history-card-section {
+            border-top: 2px dashed rgba(255, 133, 161, 0.15);
+            padding-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .filter-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .filter-select {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            outline: none;
+            background-color: #ffffff;
+            cursor: pointer;
+        }
+
+        .custom-date-inputs {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .custom-date-inputs.visible {
+            display: grid;
+        }
+
+        .date-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .date-field label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-light);
+            text-transform: uppercase;
+        }
+
+        .date-field input {
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 0.8rem;
+            color: var(--text-dark);
+            background: #ffffff;
+        }
+
+        /* Stats Card Slim */
+        .stats-card-slim {
+            background: var(--cute-pink-light);
+            border-radius: 18px;
+            padding: 10px 14px;
+            border: 1px solid rgba(255, 183, 202, 0.3);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            text-align: center;
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .stat-box:first-child {
+            border-right: 1px solid rgba(255, 183, 202, 0.4);
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--cute-pink-hover);
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            text-transform: uppercase;
+        }
+
+        /* Lista de Histórico */
+        .grouped-history {
+            overflow-y: auto;
+            max-height: 240px;
+            padding-right: 4px;
+        }
+
+        .history-group {
+            margin-bottom: 12px;
+        }
+
+        .group-date-header {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--cute-pink-hover);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+            padding: 10px 12px;
+            border-radius: 16px;
+            margin-bottom: 6px;
+            border: 1px solid #fff0f3;
+        }
+
+        .history-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-icon {
+            font-size: 1.1rem;
+        }
+
+        .history-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-type {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .history-time {
+            font-size: 0.65rem;
+            color: var(--text-light);
+        }
+
+        .history-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-amount {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--cute-pink-hover);
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #cbd5e0;
+            font-size: 0.9rem;
+            padding: 2px;
+            cursor: pointer;
+        }
+
+        .empty-history {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.8rem;
+            padding: 16px 10px;
+            font-style: italic;
+        }
+
+        .grouped-history::-webkit-scrollbar {
+            width: 4px;
+        }
+        .grouped-history::-webkit-scrollbar-thumb {
+            background: var(--cute-pink-light);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <h1>Meu Diário de Hidratação</h1>
+        </header>
+
+        <div class="goal-setting">
+            <label for="goalInput">Meta Diária:</label>
+            <input type="number" id="goalInput" class="goal-input" value="2000" step="100" onchange="updateGoal(this.value)">
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-light);">ml</span>
+        </div>
+
+        <div class="progress-panel">
+            <div class="progress-svg-container">
+                <svg width="140" height="140">
+                    <circle class="circle-bg" cx="70" cy="70" r="60"></circle>
+                    <circle class="circle-progress" id="circleProgress" cx="70" cy="70" r="60" stroke-dasharray="377" stroke-dashoffset="377"></circle>
+                </svg>
+                <div class="progress-text">
+                    <div class="total-number" id="totalDisplay">0</div>
+                    <div class="total-unit" id="goalDisplay">de 2000 ml</div>
+                    <div class="percentage-badge" id="percentageDisplay">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">O que bebeu agora?</div>
+        <div class="type-grid">
+            <button class="type-btn active" onclick="selectType('Água', '💧', this)">
+                <span class="icon">💧</span>
+                <span>Água</span>
+            </button>
+            <button class="type-btn" onclick="selectType('Café', '☕', this)">
+                <span class="icon">☕</span>
+                <span>Café</span>
+            </button>
+            <button class="type-btn" onclick="selectType('Suco', '🧃', this)">
+                <span class="icon">🧃</span>
+                <span>Suco</span>
+            </button>
+            <button class="type-btn" onclick="selectType('Chá', '🍵', this)">
+                <span class="icon">🍵</span>
+                <span>Chá</span>
+            </button>
+        </div>
+
+        <div class="section-title">Quantidade</div>
+        <div class="quantity-control">
+            <button class="qty-btn" onclick="adjustQuantity(-50)">-</button>
+            <div class="qty-display" id="qtyDisplay">250 ml</div>
+            <button class="qty-btn" onclick="adjustQuantity(50)">+</button>
+        </div>
+
+        <button class="register-btn" onclick="registerIntake()">Registrar Momento</button>
+
+        <div class="history-card-section">
+            <div class="filter-row">
+                <span class="section-title" style="margin: 0;">Histórico</span>
+                <select id="periodFilter" class="filter-select" onchange="handlePeriodChange(this.value)">
+                    <option value="hoje">Hoje</option>
+                    <option value="semana">Última Semana</option>
+                    <option value="mes">Últimos 30 Dias</option>
+                    <option value="ano">Último Ano</option>
+                    <option value="personalizado">Personalizado</option>
+                </select>
+            </div>
+
+            <div id="customDateContainer" class="custom-date-inputs">
+                <div class="date-field">
+                    <label for="startDate">De:</label>
+                    <input type="date" id="startDate" onchange="filterAndRenderHistory()">
+                </div>
+                <div class="date-field">
+                    <label for="endDate">Até:</label>
+                    <input type="date" id="endDate" onchange="filterAndRenderHistory()">
+                </div>
+            </div>
+
+            <div class="stats-card-slim">
+                <div class="stat-box">
+                    <div class="stat-value" id="statsTotal">0 L</div>
+                    <div class="stat-label">Consumo</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="statsAvg">0 ml</div>
+                    <div class="stat-label">Média Diária</div>
+                </div>
+            </div>
+
+            <div class="grouped-history" id="generalHistoryContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        let dailyGoal = 2000; 
+        let selectedType = 'Água';
+        let selectedIcon = '💧';
+        let currentQuantity = 250;
+        let masterLogs = [];
+
+        window.onload = function() {
+            loadFromStorage();
+            
+            const hojeStr = getLocalDateString(new Date());
+            const seteDiasAtras = new Date();
+            seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
+            
+            document.getElementById('startDate').value = getLocalDateString(seteDiasAtras);
+            document.getElementById('endDate').value = hojeStr;
+
+            updateUI();
+            setInterval(updateUI, 30000);
+        };
+
+        function getLocalDateString(dateObj) {
+            const ano = dateObj.getFullYear();
+            const mes = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const dia = String(dateObj.getDate()).padStart(2, '0');
+            return `${ano}-${mes}-${dia}`;
+        }
+
+        function updateGoal(newGoal) {
+            dailyGoal = parseInt(newGoal) || 2000;
+            localStorage.setItem('water_app_goal', dailyGoal);
+            updateUI();
+        }
+
+        function selectType(type, icon, element) {
+            selectedType = type;
+            selectedIcon = icon;
+            document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        function adjustQuantity(amount) {
+            currentQuantity += amount;
+            if (currentQuantity < 50) currentQuantity = 50;
+            if (currentQuantity > 2000) currentQuantity = 2000;
+            document.getElementById('qtyDisplay').innerText = `${currentQuantity} ml`;
+        }
+
+        function registerIntake() {
+            const agora = new Date();
+            const dataLocal = getLocalDateString(agora);
+            const horaLocal = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            const novoRegistro = {
+                id: Date.now(),
+                type: selectedType,
+                icon: selectedIcon,
+                amount: currentQuantity,
+                date: dataLocal,
+                time: horaLocal
+            };
+
+            masterLogs.unshift(novoRegistro);
+            saveToStorage();
+            updateUI();
+        }
+
+        function deleteLog(id) {
+            const index = masterLogs.findIndex(log => log.id === id);
+            if (index !== -1) {
+                masterLogs.splice(index, 1);
+                saveToStorage();
+                updateUI();
+            }
+        }
+
+        function handlePeriodChange(value) {
+            const container = document.getElementById('customDateContainer');
+            if (value === 'personalizado') {
+                container.classList.add('visible');
+            } else {
+                container.classList.remove('visible');
+            }
+            filterAndRenderHistory();
+        }
+
+        function filterAndRenderHistory() {
+            const filterValue = document.getElementById('periodFilter').value;
+            const hoje = new Date();
+            let logsFiltrados = [];
+
+            if (filterValue === 'hoje') {
+                const hojeStr = getLocalDateString(hoje);
+                logsFiltrados = masterLogs.filter(log => log.date === hojeStr);
+            }
+            else if (filterValue === 'semana') {
+                const limite = new Date();
+                limite.setDate(hoje.getDate() - 7);
+                const limiteStr = getLocalDateString(limite);
+                logsFiltrados = masterLogs.filter(log => log.date >= limiteStr);
+            } 
+            else if (filterValue === 'mes') {
+                const limite = new Date();
+                limite.setDate(hoje.getDate() - 30);
+                const limiteStr = getLocalDateString(limite);
+                logsFiltrados = masterLogs.filter(log => log.date >= limiteStr);
+            } 
+            else if (filterValue === 'ano') {
+                const limite = new Date();
+                limite.setDate(hoje.getDate() - 365);
+                const limiteStr = getLocalDateString(limite);
+                logsFiltrados = masterLogs.filter(log => log.date >= limiteStr);
+            } 
+            else if (filterValue === 'personalizado') {
+                const startStr = document.getElementById('startDate').value;
+                const endStr = document.getElementById('endDate').value;
+                logsFiltrados = masterLogs.filter(log => {
+                    if (startStr && log.date < startStr) return false;
+                    if (endStr && log.date > endStr) return false;
+                    return true;
+                });
+            }
+
+            renderHistoryList(logsFiltrados);
+        }
+
+        function renderHistoryList(filteredList) {
+            const container = document.getElementById('generalHistoryContainer');
+            container.innerHTML = '';
+
+            let totalVolumeMl = 0;
+            const diasUnicos = new Set();
+
+            filteredList.forEach(log => {
+                totalVolumeMl += log.amount;
+                diasUnicos.add(log.date);
+            });
+
+            const totalDisplay = totalVolumeMl >= 1000 
+                ? `${(totalVolumeMl / 1000).toFixed(1).replace('.', ',')} L` 
+                : `${totalVolumeMl} ml`;
+            
+            const totalDias = diasUnicos.size || 1;
+            const mediaDiaria = Math.round(totalVolumeMl / totalDias);
+
+            document.getElementById('statsTotal').innerText = totalDisplay;
+            document.getElementById('statsAvg').innerText = `${mediaDiaria} ml`;
+
+            if (filteredList.length === 0) {
+                container.innerHTML = '<div class="empty-history">Nenhum registro encontrado. 🌸</div>';
+                return;
+            }
+
+            const grupos = {};
+            filteredList.forEach(log => {
+                if (!grupos[log.date]) grupos[log.date] = [];
+                grupos[log.date].push(log);
+            });
+
+            const datasOrdenadas = Object.keys(grupos).sort((a, b) => b.localeCompare(a));
+
+            datasOrdenadas.forEach(dataStr => {
+                const hojeStr = getLocalDateString(new Date());
+                let dataCabecalho = '';
+
+                if (dataStr === hojeStr) {
+                    dataCabecalho = 'Hoje';
+                } else {
+                    const partes = dataStr.split('-');
+                    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                    dataCabecalho = `${partes[2]} de ${meses[parseInt(partes[1]) - 1]}`;
+                }
+
+                const somaDia = grupos[dataStr].reduce((acc, log) => acc + log.amount, 0);
+
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'history-group';
+
+                let groupHTML = `
+                    <div class="group-date-header">
+                        <span>📅 ${dataCabecalho}</span>
+                        <span style="font-weight: 600; color: var(--text-light);">${somaDia} ml</span>
+                    </div>
+                `;
+
+                grupos[dataStr].forEach(log => {
+                    groupHTML += `
+                        <div class="history-item">
+                            <div class="history-left">
+                                <span class="history-icon">${log.icon}</span>
+                                <div class="history-info">
+                                    <span class="history-type">${log.type}</span>
+                                    <span class="history-time">${log.time}</span>
+                                </div>
+                            </div>
+                            <div class="history-right">
+                                <span class="history-amount">+ ${log.amount}ml</span>
+                                <button class="delete-btn" onclick="deleteLog(${log.id})">✕</button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                groupDiv.innerHTML = groupHTML;
+                container.appendChild(groupDiv);
+            });
+        }
+
+        function updateUI() {
+            const hojeStr = getLocalDateString(new Date());
+            const registrosHoje = masterLogs.filter(log => log.date === hojeStr);
+            const currentTotal = registrosHoje.reduce((acc, log) => acc + log.amount, 0);
+
+            document.getElementById('totalDisplay').innerText = currentTotal;
+            document.getElementById('goalDisplay').innerText = `de ${dailyGoal} ml`;
+            
+            const percentage = Math.round((currentTotal / dailyGoal) * 100);
+            document.getElementById('percentageDisplay').innerText = `${percentage}%`;
+            
+            const circle = document.getElementById('circleProgress');
+            const circumference = 377;
+            const offset = circumference - (Math.min(percentage, 100) / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+            
+            document.getElementById('goalInput').value = dailyGoal;
+
+            filterAndRenderHistory();
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('water_app_master_logs_v2', JSON.stringify(masterLogs));
+            localStorage.setItem('water_app_goal', dailyGoal);
+        }
+
+        function loadFromStorage() {
+            const savedGoal = localStorage.getItem('water_app_goal');
+            if (savedGoal) dailyGoal = parseInt(savedGoal);
+
+            const savedMasterLogs = localStorage.getItem('water_app_master_logs_v2');
+            if (savedMasterLogs) masterLogs = JSON.parse(savedMasterLogs);
+        }
+    </script>
+</body>
+</html>
